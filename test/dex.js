@@ -12,7 +12,8 @@ contract('Dex', () => {
         return web3.utils.fromAscii(ticker);
     });
 
-    beforeEach(async () => {
+    beforeEach(async (accounts) => {
+        const [trader1, trader2] = [accounts[1], accounts[2]];
         ([dai, bat, zrx, rep] = await Promise.all([
             Dai.new(),
             Bat.new(),
@@ -27,5 +28,18 @@ contract('Dex', () => {
             dex.addToken(ZRX, zrx.address),
             dex.addToken(REP, rep.address)
         ]);
+
+        const amount = web3.utils.toWei('1000');
+        const seedTokenAccount = async (token, trader) => {
+            await token.faucet(trader, amount);
+            await token.approve(dex.address, amount, { from: trader });
+        }
+
+        Promise.all(
+            [DAI, BAT, ZRX, REP].map(token => {
+                seedTokenAccount(token, trader1);
+                seedTokenAccount(token, trader2);
+            })
+        );
     });
 })
