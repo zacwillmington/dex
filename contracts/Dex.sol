@@ -1,6 +1,6 @@
-pragma solidity 0.6.0;
+pragma solidity 0.8.11;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import 'https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Dex {
     
@@ -8,7 +8,7 @@ contract Dex {
 
     struct Token {
         bytes32 ticker;
-        address TokenAddress;
+        address tokenAddress;
     }
 
     event NewTrade (
@@ -47,7 +47,7 @@ contract Dex {
     uint public nextOrderId;
     uint public nextTradeId;
 
-    constructor() public {
+    constructor() {
         admin = msg.sender;
     }
 
@@ -59,9 +59,8 @@ contract Dex {
         Token[] memory _tokens = new Token[](tokenList.length);
         for (uint i = 0; i < tokenList.length; i++) {
             _tokens[i] = Token(
-            tokens[tokenList[i]].id,
-            tokens[tokenList[i]].symbol,
-            tokens[tokenList[i]].at
+                tokens[tokenList[i]].ticker,
+                tokens[tokenList[i]].tokenAddress
             );
         }
       
@@ -78,12 +77,12 @@ contract Dex {
             require(traderBalances[msg.sender][ticker] >= amount, 'Balance it too low');
         }
 
-        Order[] storage orders = Orderbook[ticker][uint(side == Side.BUY ? Side.SELL : Side.BUY)];
+        Order[] storage orders = orderBook[ticker][uint(side == Side.BUY ? Side.SELL : Side.BUY)];
         uint i = 0;
         uint remainder = amount;
         while (i < orders.length && remainder > 0) {
             uint availabe = orders[i].amount = orders[i].amount.sub(orders[i].filled);
-            uint matched = (remainder > availabe) ? availabe : remaining;
+            uint matched = (remainder > availabe) ? availabe : remainder;
             remainder = remainder.sub(matched);
             orders[i].filled = orders[i].filled.add(matched);
             emit NewTrade(
@@ -93,8 +92,8 @@ contract Dex {
                 orders[i].trader,
                 msg.sender,
                 matched,
-                price,
-                now
+                orders[i].price,
+                block.timestamp
             );
             if (side == Side.SELL) {
                  traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(matched);
@@ -139,13 +138,13 @@ contract Dex {
 
     function createLimitOrder(bytes32 ticker, uint amount, uint price, Side side) tokenExist(ticker) tokenIsNotDAI(ticker) external {
 
-        if (side == Side.sell) {
+        if (side == Side.SELL) {
             require(traderBalances[msg.sender][ticker] >= amount, 'Balance it too low');
         } else {
             require(traderBalances[msg.sender][DAI] >= amount.mul(price), 'DAI Balance is too low');
         }
 
-        Order[] storage orders = Orderbook[ticker][uint(side)];
+        Order[] storage orders = orderBook[ticker][uint(side)];
         orders.push(Order(
             nextOrderId,
             msg.sender,
@@ -154,7 +153,7 @@ contract Dex {
             amount,
             0,
             price,
-            now
+            block.timestamp
         ));
 
         uint i = orders.length > 0 ? orders.length - 1 : 0;
@@ -166,8 +165,8 @@ contract Dex {
                 break;
             }
 
-            Order temp = order[i];
-            order[i] = orders[i - 1];
+            Order memory temp = orders[i];
+            orders[i] = orders[i - 1];
             orders[i - 1] = temp;
             i = i.sub(1);
         }
