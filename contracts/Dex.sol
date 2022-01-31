@@ -97,7 +97,7 @@ contract Dex {
                 block.timestamp
             );
             if (side == Side.SELL) {
-                 traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(matched);
+                traderBalances[msg.sender][ticker] = traderBalances[msg.sender][ticker].sub(matched);
                 traderBalances[msg.sender][DAI] = traderBalances[msg.sender][DAI].add(matched.mul(orders[i].price));
                 traderBalances[orders[i].trader][ticker] = traderBalances[orders[i].trader][ticker].add(matched);
                 traderBalances[orders[i].trader][DAI] = traderBalances[orders[i].trader][DAI].sub(matched.mul(orders[i].price));
