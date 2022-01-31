@@ -1,6 +1,7 @@
-pragma solidity 0.8.11;
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+pragma solidity 0.6.3;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+pragma experimental ABIEncoderV2;
 
 contract Dex {
     
@@ -47,7 +48,7 @@ contract Dex {
     uint public nextOrderId;
     uint public nextTradeId;
 
-    constructor() {
+    constructor() public {
         admin = msg.sender;
     }
 
@@ -186,7 +187,7 @@ contract Dex {
         _;
     }
     modifier tokenExist(bytes32 ticker) {
-        require(tokens[ticker].tokenAddress != address(0), "Token doens't exist");
+        require(tokens[ticker].tokenAddress != address(0), "this token does not exist");
         _;
     }
 
